@@ -1,0 +1,51 @@
+{
+  "name": "@picabia/boilerplate",
+  "version": "0.2.0",
+  "description": "Picabia Demo: Camera",
+  "license": "MIT",
+  "homepage": "https://github.com/picabia/demo-camera",
+  "author": "Andre Torgal <andre.torgal@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picabia/demo-camera.git"
+  },
+  "scripts": {
+    "dev": "webpack-dev-server --config webpack.dev.js",
+    "test": "nyc _mocha --require esm --recursive test/",
+    "coverage": "http-server coverage/",
+    "lint": "eslint src/ test/",
+    "lint-fix": "eslint --fix src/ test/",
+    "build": "npm run lint && npm run test && webpack --config webpack.prod.js"
+  },
+  "esm": {
+    "cjs": true
+  },
+  "dependencies": {
+    "esm": "^3.0.28",
+    "@picabia/picabia": "^0.6.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-minify-webpack-plugin": "^0.2.0",
+    "chai": "^4.1.2",
+    "clean-webpack-plugin": "^0.1.18",
+    "copy-webpack-plugin": "^4.3.1",
+    "css-loader": "^0.28.9",
+    "eslint": "^4.10.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "express": "^4.16.2",
+    "html-webpack-plugin": "^2.30.1",
+    "http-server": "^0.11.1",
+    "lodash-es": "^4.17.5",
+    "mocha": "^5.1.1",
+    "nyc": "^11.7.1",
+    "style-loader": "^0.20.1",
+    "webpack": "^3.8.1",
+    "webpack-dev-server": "~2.9.3"
+  }
+}

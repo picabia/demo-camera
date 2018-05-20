@@ -1,0 +1,51 @@
+
+/* ---- reset ---- */
+
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+
+/* ---- typography ---- */
+
+body {
+  color: #111;
+  background: rgb(93, 53, 53);
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 147%;
+}
+
+/* ---- layout ---- */
+
+html,
+body,
+.app  {
+  height: 100%;
+  overflow: hidden;
+}
+
+#app-container {
+  height: 100%;
+}
+
+/* ---- picabia ---- */
+
+.x-canvas-size {
+  background: rgb(54, 53, 64);
+}
+
+
+
+
+
+
+

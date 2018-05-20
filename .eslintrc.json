@@ -1,0 +1,25 @@
+{
+  "extends": "standard",
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "globals": {
+    "document": false,
+    "window": false,
+    "describe": false,
+    "before": false,
+    "beforeEach": false,
+    "after": false,
+    "afterEach": false,
+    "it": false,
+    "expect": false
+
+  },
+  "rules": {
+    "semi": [
+      "error",
+      "always"
+    ]
+  }
+}
