@@ -3,9 +3,7 @@ import { View } from '@picabia/picabia';
 class BgView extends View {
   // -- view
 
-  _render () {
-    const renderer = this._renderer;
-
+  render (renderer) {
     renderer.setFillStyle('black');
 
     renderer.moveTo(-500, 0);

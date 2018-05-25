@@ -5,14 +5,17 @@ import { PlayerView } from './player';
 import { GridView } from './grid';
 
 class GameView extends View {
-  _constructor (game) {
-    this._game = game;
-    this._camera = this._vm.get('camera');
+  constructor (v, target, game) {
+    super(v, target);
 
-    this._createChild(BgView, [], '2d', 'camera-bg', 'layer-1');
+    this._game = game;
+
+    this._camera = this._v.get('camera:one');
+
+    this._createChild(BgView, { viewport: 'bg', layer: 'stage' });
 
     this._game.on('new-player', (player) => {
-      this._createChild(PlayerView, [player], '2d', 'camera-player', 'layer-1', 0);
+      this._createChild(PlayerView, { viewport: 'player', layer: 'stage', zIndex: 0 }, player);
       this._camera.setAngle('player-direction', player.time, -Math.PI / 2);
 
       player.on('moving', (player) => {
@@ -31,15 +34,18 @@ class GameView extends View {
 
       player.on('jump-land', (player) => {
         if (!this._landWave) {
-          const shake = (player._jumpHeight / 10 + player._speed / 2) / 10;
+          const shake = (player._jumpHeight / 10 + player._speed / 2) / 20;
           this._landWave = Wave.triangle(player.time.t, 1 - shake / 2, shake, 200, Math.PI / 2);
-          this._landWaveOff = Time.run(this._time.t, 400);
+          this._landWaveOff = Time.run(this._time.t, 400, () => {
+            this._landWave = null;
+            this._camera.setZoom('player-shake', this.time, 1);
+          });
         }
       });
     });
 
     this._game.on('new-grid', (grid) => {
-      this._createChild(GridView, [grid], '2d', 'camera-bg', 'layer-bg', 1);
+      this._createChild(GridView, { viewport: 'bg', layer: 'bg', zIndex: 1 }, grid);
     });
 
     this._controls = {
@@ -53,24 +59,21 @@ class GameView extends View {
 
   _preInit () {
     this._oscillator1 = Wave.sine(this._time.t, 0, 0.1, 5000);
-    this._oscillator2 = Wave.triangle(this._time.t, 0, 5, 500);
+    this._oscillator2 = Wave.triangle(this._time.t, 0, 0.01, 500);
   }
 
   _preUpdate () {
-    this._camera.setZoom('oscillator', this.time, 1 - this._oscillator1(this._time.t));
-    this._camera.setAngle('oscillator', this.time, this._oscillator2(this._time.t) / 100);
+    this._camera.setZoom('oscillator', this.time, 1 - this._oscillator1(this._time));
+    this._camera.setAngle('oscillator', this.time, this._oscillator2(this._time));
 
     if (this._landWave) {
-      const value = this._landWave(this._time.t);
+      const value = this._landWave(this._time);
       this._camera.setZoom('player-shake', this.time, value);
-      this._landWaveOff(this._time.t, () => {
-        this._landWave = null;
-        this._camera.setZoom('player-shake', this.time, 1);
-      });
+      this._landWaveOff(this._time);
     }
   }
 
-  // -- public
+  // -- api
 
   input (control) {
     const args = [...arguments];

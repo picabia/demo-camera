@@ -1,7 +1,9 @@
 import { View, Time } from '@picabia/picabia';
 
 class GridView extends View {
-  _constructor (grid) {
+  constructor (v, target, grid) {
+    super(v, target);
+
     this._grid = grid;
 
     this._grid.setPoints(this._viewport.getShape());
@@ -13,10 +15,8 @@ class GridView extends View {
 
   // -- view
 
-  _render () {
+  render (renderer) {
     const points = this._grid._points;
-
-    const renderer = this._renderer;
 
     renderer.setStrokeWidth(1);
     renderer.setFillStyle('rgba(1, 1, 1, 1)');

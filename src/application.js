@@ -1,12 +1,13 @@
-import { Container, Frame, ViewManager, Viewport, ViewportGroup, Camera, CanvasLayer2d, CanvasRenderer2d, KeyboardInput } from '@picabia/picabia';
+import { Container, Frame, ViewEngine, Viewport, ViewportGroup, Camera, CanvasLayer2d, CanvasRenderer2d, KeyboardInput } from '@picabia/picabia';
+import { FpsCanvas } from '@picabia/component-fps';
 
 import { GameModel } from './model/game';
 import { GameView } from './view/game';
-import { CameraPosControl } from '../../../picabia/src/render/camera/pos-control';
+
+import { CameraPosControlLaggy } from './lib/render/camera-pos-control-laggy';
 
 class Application {
   constructor (dom, cache) {
-    this._dom = dom;
     this._cache = cache;
 
     // -- model
@@ -19,10 +20,12 @@ class Application {
       mode: 'cover',
       maxPixels: 1500 * 1500
     };
-    this._container = new Container('main', this._dom, containerOptions);
+    this._container = new Container('main', dom, containerOptions);
 
-    this._vm = new ViewManager();
-    this._vm.add(this._container);
+    this._v = new ViewEngine(dom);
+    this._v.add(this._container);
+
+    const renderer = this._v.add(new CanvasRenderer2d('2d'));
 
     const viewportOptions = {
       pos: { x: 0, y: 0 }
@@ -30,56 +33,20 @@ class Application {
     const viewportConstraints = {
       zoom: { min: 0.5 }
     };
-    this._viewportPlayer = new Viewport('camera-player', viewportOptions, viewportConstraints);
-    this._vm.add(this._viewportPlayer);
+    this._viewportPlayer = new Viewport('player', viewportOptions, viewportConstraints);
+    this._v.add(this._viewportPlayer);
 
-    this._viewportBg = new Viewport('camera-bg', viewportOptions, viewportConstraints);
-    this._vm.add(this._viewportBg);
+    this._viewportBg = new Viewport('bg', viewportOptions, viewportConstraints);
+    this._v.add(this._viewportBg);
 
-    this._viewportGroup = new ViewportGroup([this._viewportBg, this._viewportPlayer]);
+    this._viewportGroup = new ViewportGroup('motion', [this._viewportBg, this._viewportPlayer]);
 
-    this._camera = new Camera('camera');
-    this._vm.add(this._camera);
+    this._camera = new Camera('one');
+    this._v.add(this._camera);
 
-    class Controller extends CameraPosControl {
-      constructor (options, constraints) {
-        super(constraints);
+    const cameraPosControl = new CameraPosControlLaggy({ lag: 200 });
 
-        options = options || {};
-        this._lag = options.lag || 500;
-        this._length = options.length || 100;
-
-        this._values = [];
-      }
-
-      setValue (time, value) {
-        super.setValue(time, value);
-        this._values.push({time, value: this._nextValue});
-        if (this._values.length > this._length) {
-          this._values.shift();
-        }
-      }
-
-      get updateRequired () {
-        return this._updateRequired;
-      }
-
-      preRender (time) {
-        if (this._values.length) {
-          const filtered = this._values.filter((item) => time.t - item.time.t < this._lag);
-          this._nextValue = filtered.length ? filtered[0].value : this._values[0].value;
-          this._values = filtered;
-        }
-        const changed = !this._value || this._value.x !== this._nextValue.x || this._value.y !== this._nextValue.y;
-        this._updateRequired = this._values.length;
-        this._value = this._nextValue;
-        return changed;
-      }
-    }
-
-    const controller = new Controller({ lag: 200 });
-
-    this._camera.addPosControl('player-pos', [this._viewportPlayer, this._viewportBg], controller);
+    this._camera.addPosControl('player-pos', [this._viewportPlayer, this._viewportBg], cameraPosControl);
     this._camera.addPosControl('player-jump', [this._viewportPlayer]);
     this._camera.addPosControl('player-speed', [this._viewportPlayer, this._viewportBg]);
 
@@ -96,12 +63,11 @@ class Application {
       this._viewportGroup.setScale(size.h / 1000);
     });
 
-    this._vm.add(new CanvasRenderer2d('2d'));
+    this._v.add(new CanvasLayer2d('bg', this._container));
+    this._v.add(new CanvasLayer2d('stage', this._container));
+    this._v.add(new FpsCanvas(this._v, { renderer }, this._container));
 
-    this._vm.add(new CanvasLayer2d('layer-bg', this._container));
-    this._vm.add(new CanvasLayer2d('layer-1', this._container));
-
-    const rootView = new GameView(this._vm, [this._game]);
+    const gameController = this._v.add(new GameView(this._v, { renderer }, this._game));
 
     // -- input
 
@@ -128,7 +94,7 @@ class Application {
       1: 'shuffle'
     });
 
-    this._keyboard2.on('control', (control) => rootView.input(control));
+    this._keyboard2.on('control', (control) => gameController.input(control));
 
     // -- start
 
@@ -142,12 +108,13 @@ class Application {
     };
     this._frame = new Frame(frameOptions);
     this._frame.on('update', (time) => this._game.update(time));
-    this._frame.on('render', (time) => this._vm.render(rootView, time));
+    this._frame.on('render', (time) => this._v.render(time));
     this._frame.start();
   }
 
   resize () {
     this._container.resize();
+    this._v.resize();
   }
 }
 

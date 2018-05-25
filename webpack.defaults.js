@@ -5,7 +5,7 @@ const path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 var webpackConfig = {
-  entry: path.join(__dirname, 'src/main.js'),
+  entry: path.join(__dirname, 'src/index.js'),
   output: {
     path: path.join(__dirname, 'dist'),
     filename: 'index.js'

@@ -55,7 +55,7 @@ class PlayerModel extends Model {
   // -- model
 
   _init (time) {
-    this._log = Time.throttleAF(() => {
+    this._log = Time.throttle(() => {
       // console.log(Math.round(this._lateralAcceleration * 10000));
     }, 250);
 
@@ -63,37 +63,36 @@ class PlayerModel extends Model {
   }
 
   _preUpdate () {
-    const timestamp = this._time.t;
-    const delta = this._time.d;
+    const time = this._time;
 
     this._log();
 
     if (!this._height && this._acceleration > 0) {
-      this._moveSpeed += delta * ACCELERATION_INCREMENT;
+      this._moveSpeed += time.d * ACCELERATION_INCREMENT;
       if (this._moveSpeed >= MAX_MOVE_SPEED) {
         this._moveSpeed = MAX_MOVE_SPEED;
       }
     } else {
       if (this._dashSpeed > 0) {
-        this._dashSpeed -= delta * DASH_DECREMENT;
+        this._dashSpeed -= time.d * DASH_DECREMENT;
         if (this._dashSpeed <= 0) {
           this._dashSpeed = 0;
         }
       }
       if (!this._height && this._acceleration < 0) {
-        this._moveSpeed -= delta * BREAKING_INCREMENT;
+        this._moveSpeed -= time.d * BREAKING_INCREMENT;
         if (this._moveSpeed <= 0) {
           this._emitter.emit('break', this);
           this._moveSpeed = 0;
         }
       } else if (!this._height && this._moveSpeed) {
-        this._moveSpeed -= delta * STOP_INCREMENT;
+        this._moveSpeed -= time.d * STOP_INCREMENT;
         if (this._moveSpeed <= 0) {
           this._emitter.emit('stop', this);
           this._moveSpeed = 0;
         }
       } else if (this._moveSpeed) {
-        this._moveSpeed -= delta * AIR_STOP_INCREMENT;
+        this._moveSpeed -= time.d * AIR_STOP_INCREMENT;
         if (this._moveSpeed <= 0) {
           this._moveSpeed = 0;
         }
@@ -101,14 +100,14 @@ class PlayerModel extends Model {
     }
 
     if (!this._height && this._dashing) {
-      this._dashSpeed += delta * DASH_INCREMENT;
+      this._dashSpeed += time.d * DASH_INCREMENT;
       if (this._dashSpeed >= MAX_DASH_SPEED) {
         this._dashSpeed = MAX_DASH_SPEED;
       }
     }
 
     if (!this._dashing && this._acceleration > 0 && this._dashSpeed) {
-      this._dashSpeed -= delta * DASH_DECREMENT;
+      this._dashSpeed -= time.d * DASH_DECREMENT;
       if (this._dashSpeed <= 0) {
         this._dashSpeed = 0;
       }
@@ -118,10 +117,10 @@ class PlayerModel extends Model {
 
     if (this._jumping && this._speed > MIN_JUMP_SPEED) {
       if (!this._jumpTime) {
-        this._jumpTime = timestamp;
+        this._jumpTime = time.t;
         this._emitter.emit('jump-start', this);
       }
-      this._jumpForce += (this._jumpForce ? delta * JUMP_INCREMENT : MIN_JUMP_FORCE);
+      this._jumpForce += (this._jumpForce ? time.d * JUMP_INCREMENT : MIN_JUMP_FORCE);
       const jumpForceFactor = this._speed * 2 / (MAX_MOVE_SPEED + MAX_DASH_SPEED);
       if (this._jumpForce >= MAX_JUMP_FORCE * jumpForceFactor) {
         this._emitter.emit('jump-stop', this);
@@ -132,12 +131,12 @@ class PlayerModel extends Model {
       this._jumpForce = Math.max(this._jumpForce, this._jumpForce);
     }
 
-    this._height += this._vSpeed * delta;
+    this._height += this._vSpeed * time.d;
 
     if (this._height) {
       this._jumpHeight = Math.max(this._jumpHeight, this._height);
       if (!this._jumping) {
-        this._vSpeed -= delta * GRAVITY;
+        this._vSpeed -= time.d * GRAVITY;
         if (this._height < 0) {
           this._height = 0;
           this._vSpeed = 0;
@@ -152,13 +151,13 @@ class PlayerModel extends Model {
     const notStearing = !this._turn;
     const stearingOpposite = Math.sign(this._turnAngle) !== Math.sign(this._turn);
     if (!this._height && this._turnAngle && this._speed && notStearing) {
-      this._turnAngle *= (0.99 * (1 - Math.min(this._speed, 2) / 3)) ** (delta / 100);
+      this._turnAngle *= (0.99 * (1 - Math.min(this._speed, 2) / 3)) ** (time.d / 100);
     }
     if (!this._height && this._turnAngle && this._speed && stearingOpposite) {
-      this._turnAngle *= (0.99 * (1 - Math.min(this._speed, 1) / 10)) ** (delta / 200);
+      this._turnAngle *= (0.99 * (1 - Math.min(this._speed, 1) / 10)) ** (time.d / 200);
     }
     if (!this._height && this._turn && this._speed) {
-      this._turnAngle += this._turn * delta * TURN_INCREMENT;
+      this._turnAngle += this._turn * time.d * TURN_INCREMENT;
       if (Math.abs(this._turnAngle) > MAX_TURN_ANGLE) {
         this._turnAngle = MAX_TURN_ANGLE * Math.sign(this._turnAngle);
       }
@@ -169,18 +168,18 @@ class PlayerModel extends Model {
     if (!Granular.zero(this._turnAngle)) {
       this._lateralAcceleration = this._turnAngle * this._speed;
     } else {
-      this._lateralAcceleration *= 0.9 ** (delta / 10);
+      this._lateralAcceleration *= 0.9 ** (time.d / 10);
     }
 
-    this._dir += this._oscillator1(this._time.t);
+    this._dir += this._oscillator1(this._time);
 
     const dir = Geometry.radiansToVector(this._dir);
 
     if (this._speed && dir.x) {
-      this._pos.x += dir.x * this._speed * delta;
+      this._pos.x += dir.x * this._speed * time.d;
     }
     if (this._speed && dir.y) {
-      this._pos.y += dir.y * this._speed * delta;
+      this._pos.y += dir.y * this._speed * time.d;
     }
 
     if (this._speed) {
@@ -204,7 +203,7 @@ class PlayerModel extends Model {
       }
     }
 
-    this._log(delta, timestamp, this._facing);
+    this._log(time.d, time.t, this._facing);
   }
 
   _destroy () {
